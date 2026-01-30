@@ -244,12 +244,17 @@ public class CostsController : ControllerBase
         await _costs.InsertOneAsync(input);
 
         // Notify Selected Recipients
+        HashSet<int> notifiedUserIds = new HashSet<int>();
+
         if (input.NotificationRecipients != null && input.NotificationRecipients.Count > 0)
         {
             foreach (var recipientId in input.NotificationRecipients)
             {
+                 if (notifiedUserIds.Contains(recipientId)) continue;
+                 
                  await CreateAndSendNotification(recipientId, "Phiếu chi mới cần duyệt", 
                     $"{userName} đã tạo phiếu chi #{input.LegacyId}. Vui lòng duyệt.", "CostApproval", input.LegacyId.ToString());
+                 notifiedUserIds.Add(recipientId);
             }
         }
         else
@@ -260,8 +265,12 @@ public class CostsController : ControllerBase
 
             if (creator != null && !string.IsNullOrEmpty(creator.ManagerId) && int.TryParse(creator.ManagerId, out int managerId))
             {
-                 await CreateAndSendNotification(managerId, "Phiếu chi mới cần duyệt", 
-                    $"{userName} đã tạo phiếu chi #{input.LegacyId}. Vui lòng duyệt.", "CostApproval", input.LegacyId.ToString());
+                 if (!notifiedUserIds.Contains(managerId))
+                 {
+                     await CreateAndSendNotification(managerId, "Phiếu chi mới cần duyệt", 
+                        $"{userName} đã tạo phiếu chi #{input.LegacyId}. Vui lòng duyệt.", "CostApproval", input.LegacyId.ToString());
+                     notifiedUserIds.Add(managerId);
+                 }
                  managerNotified = true;
             }
 
@@ -269,11 +278,11 @@ public class CostsController : ControllerBase
             if (!managerNotified)
             {
                 await SendNotificationToRole("ip_manager", "Phiếu chi mới cần duyệt", 
-                    $"{userName} đã tạo phiếu chi #{input.LegacyId}. Vui lòng duyệt.", "CostApproval", input.LegacyId.ToString());
+                    $"{userName} đã tạo phiếu chi #{input.LegacyId}. Vui lòng duyệt.", "CostApproval", input.LegacyId.ToString(), notifiedUserIds);
             }
             
             await SendNotificationToRole("admin", "Phiếu chi mới cần duyệt", 
-                $"{userName} đã tạo phiếu chi #{input.LegacyId}. Vui lòng duyệt.", "CostApproval", input.LegacyId.ToString());
+                $"{userName} đã tạo phiếu chi #{input.LegacyId}. Vui lòng duyệt.", "CostApproval", input.LegacyId.ToString(), notifiedUserIds);
         }
 
         return Ok(new { message = "Tạo phiếu thành công", id = input.LegacyId });
@@ -548,11 +557,17 @@ public class CostsController : ControllerBase
         return Ok(new { message = "Đã từ chối phiếu" });
     }
 
-    private async Task SendNotificationToRole(string roleCode, string title, string message, string type, string relatedId)
+    private async Task SendNotificationToRole(string roleCode, string title, string message, string type, string relatedId, HashSet<int>? notifiedUserIds = null)
     {
         var users = await _users.Find(u => u.RoleCode == roleCode).ToListAsync();
         foreach (var user in users)
         {
+            if (notifiedUserIds != null)
+            {
+                if (notifiedUserIds.Contains(user.LegacyId)) continue;
+                notifiedUserIds.Add(user.LegacyId);
+            }
+            
             await CreateAndSendNotification(user.LegacyId, title, message, type, relatedId);
         }
     }
@@ -588,12 +603,78 @@ public class CostsController : ControllerBase
             var user = await _users.Find(u => u.LegacyId == userId).FirstOrDefaultAsync();
             if (user != null && !string.IsNullOrEmpty(user.Email))
             {
-                await _emailService.SendEmailAsync(user.Email, title, title, message);
+                Console.WriteLine($"Found user {user.Username} with email {user.Email}. Sending notification email...");
+                
+                string emailBody = message;
+                
+                // Try to find related Cost to enrich email content
+                if (!string.IsNullOrEmpty(relatedId))
+                {
+                    Cost? relatedCost = null;
+                    if (int.TryParse(relatedId, out int costLegacyId))
+                    {
+                        relatedCost = await _costs.Find(c => c.LegacyId == costLegacyId).FirstOrDefaultAsync();
+                    }
+                    else
+                    {
+                        relatedCost = await _costs.Find(c => c.Id == relatedId).FirstOrDefaultAsync();
+                    }
+
+                    if (relatedCost != null)
+                    {
+                        emailBody = $@"
+                        <div style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
+                            <h2 style='color: #2c3e50;'>{title}</h2>
+                            <p>{message}</p>
+                            <div style='background-color: #f9f9f9; padding: 15px; border-radius: 5px; border: 1px solid #ddd; margin-top: 20px;'>
+                                <h3 style='margin-top: 0; color: #3498db;'>Thông tin phiếu chi</h3>
+                                <table style='width: 100%; border-collapse: collapse;'>
+                                    <tr>
+                                        <td style='padding: 8px 0; font-weight: bold; width: 150px;'>Mã phiếu:</td>
+                                        <td>{relatedCost.VoucherNumber ?? relatedCost.LegacyId.ToString()}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style='padding: 8px 0; font-weight: bold;'>Người yêu cầu:</td>
+                                        <td>{relatedCost.Requester}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style='padding: 8px 0; font-weight: bold;'>Bộ phận:</td>
+                                        <td>{relatedCost.Department}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style='padding: 8px 0; font-weight: bold;'>Dự án:</td>
+                                        <td>{relatedCost.ProjectCode}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style='padding: 8px 0; font-weight: bold;'>Nội dung:</td>
+                                        <td>{relatedCost.Content}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style='padding: 8px 0; font-weight: bold;'>Số tiền:</td>
+                                        <td style='color: #e74c3c; font-weight: bold;'>{relatedCost.TotalAmount:N0} VNĐ</td>
+                                    </tr>
+                                    <tr>
+                                        <td style='padding: 8px 0; font-weight: bold;'>Trạng thái:</td>
+                                        <td>{relatedCost.PaymentStatus}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <p style='margin-top: 20px; font-size: 12px; color: #777;'>Đây là email tự động từ hệ thống QLKH.</p>
+                        </div>";
+                    }
+                }
+
+                await _emailService.SendEmailAsync(user.Email, title, title, emailBody);
+            }
+            else 
+            {
+                Console.WriteLine($"User {userId} not found or has no email.");
             }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, $"Failed to send email notification to user {userId}");
+            Console.WriteLine($"Error in CostsController.CreateAndSendNotification: {ex.Message}");
         }
     }
 }

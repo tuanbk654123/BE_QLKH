@@ -35,11 +35,15 @@ public class EmailService : IEmailService
         if (string.IsNullOrEmpty(_settings.SenderEmail) || string.IsNullOrEmpty(_settings.Password))
         {
             _logger.LogWarning("Email settings are not configured. Skipping email sending.");
+            Console.WriteLine("Email settings are not configured. Skipping email sending.");
             return;
         }
 
         try
         {
+            _logger.LogInformation($"Attempting to send email to {toEmail} with subject: {subject}");
+            Console.WriteLine($"Attempting to send email to {toEmail} with subject: {subject}");
+
             var password = _settings.Password.Replace(" ", ""); // Remove spaces from App Password
             var smtpClient = new SmtpClient(_settings.SmtpServer)
             {
@@ -59,11 +63,14 @@ public class EmailService : IEmailService
             mailMessage.To.Add(toEmail);
 
             await smtpClient.SendMailAsync(mailMessage);
-            _logger.LogInformation($"Email sent to {toEmail}");
+            _logger.LogInformation($"Email sent successfully to {toEmail}");
+            Console.WriteLine($"Email sent successfully to {toEmail}");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Failed to send email to {toEmail}");
+            _logger.LogError(ex, $"Failed to send email to {toEmail}. Error: {ex.Message}");
+            Console.WriteLine($"Failed to send email to {toEmail}. Error: {ex.Message}");
+            Console.WriteLine(ex.ToString());
         }
     }
 

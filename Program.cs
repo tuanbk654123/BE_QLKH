@@ -15,6 +15,9 @@ builder.Services.Configure<MongoDbSettings>(
 builder.Services.Configure<AuthSettings>(
     builder.Configuration.GetSection("Auth"));
 
+builder.Services.Configure<EmailSettings>(
+    builder.Configuration.GetSection("EmailSettings"));
+
 builder.Services.AddSingleton<IMongoClient>(sp =>
 {
     var options = sp.GetRequiredService<IOptions<MongoDbSettings>>();
