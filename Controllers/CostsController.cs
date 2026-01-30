@@ -162,10 +162,7 @@ public class CostsController : ControllerBase
             rejectionReason = c.RejectionReason,
             note = c.Note,
             statusHistory = c.StatusHistory,
-            createdByUserId = c.CreatedByUserId,
-            approverManager = c.ApproverManager,
-            approverDirector = c.ApproverDirector,
-            accountantReview = c.AccountantReview
+            createdByUserId = c.CreatedByUserId
         });
 
         return Ok(new
@@ -311,7 +308,8 @@ public class CostsController : ControllerBase
                         : $"Cập nhật trạng thái: {input.PaymentStatus}"
              });
 
-             // Auto-fill Approver fields based on status change
+             // Auto-fill Approver fields based on status change - REMOVED per user request
+             /*
              if (input.PaymentStatus == "Quản lý duyệt" && string.IsNullOrEmpty(input.ApproverManager))
              {
                  input.ApproverManager = "Đã duyệt";
@@ -331,6 +329,7 @@ public class CostsController : ControllerBase
                  else if (userRole == "giam_doc") input.ApproverDirector = "Từ chối";
                  else if (userRole == "ke_toan") input.AccountantReview = "Từ chối";
              }
+             */
         }
 
         input.Id = cost.Id;
@@ -388,10 +387,10 @@ public class CostsController : ControllerBase
         // Workflow Logic
         if (cost.PaymentStatus == "Đợi duyệt")
         {
-            if (userRole == "ip_manager" || userRole == "quan_ly" || userRole == "admin")
+            if (userRole == "ip_manager" || userRole == "quan_ly" || userRole == "manager" || userRole == "admin")
             {
                 nextStatus = "Quản lý duyệt";
-                cost.ApproverManager = "Đã duyệt";
+                // cost.ApproverManager = "Đã duyệt"; // Removed
                 
                 // Determine Director to notify
                 // Case 1: Requester is Manager -> Notify their Manager (Director)
@@ -427,14 +426,23 @@ public class CostsController : ControllerBase
                 notificationTitle = "Phiếu chi đã được quản lý duyệt";
                 notificationMsg = $"Quản lý {userName} đã duyệt phiếu chi #{id}. Chờ giám đốc duyệt.";
             }
+            else if (userRole == "giam_doc" || userRole == "director")
+            {
+                 // Director approving at "Đợi duyệt" (Skip Manager or Direct Approval)
+                 nextStatus = "Giám đốc duyệt";
+                 roleToNotifyFallback = "ke_toan";
+                 
+                 notificationTitle = "Phiếu chi đã được giám đốc duyệt";
+                 notificationMsg = $"Giám đốc {userName} đã duyệt phiếu chi #{id}. Chờ kế toán thanh toán.";
+            }
             else return BadRequest(new { message = "Bạn không có quyền duyệt phiếu này" });
         }
         else if (cost.PaymentStatus == "Quản lý duyệt")
         {
-             if (userRole == "giam_doc" || userRole == "admin")
+             if (userRole == "giam_doc" || userRole == "director" || userRole == "admin")
             {
                 nextStatus = "Giám đốc duyệt";
-                cost.ApproverDirector = "Đã duyệt";
+                // cost.ApproverDirector = "Đã duyệt"; // Removed
                 
                 roleToNotifyFallback = "ke_toan"; // Accountants are usually a pool
                 
@@ -445,10 +453,10 @@ public class CostsController : ControllerBase
         }
         else if (cost.PaymentStatus == "Giám đốc duyệt")
         {
-             if (userRole == "ke_toan" || userRole == "admin")
+             if (userRole == "ke_toan" || userRole == "accountant" || userRole == "admin")
             {
                 nextStatus = "Đã thanh toán";
-                cost.AccountantReview = "Đã duyệt";
+                // cost.AccountantReview = "Đã duyệt"; // Removed
                 
                 notificationTitle = "Phiếu chi đã được thanh toán";
                 notificationMsg = $"Kế toán {userName} đã xác nhận thanh toán phiếu chi #{id}.";

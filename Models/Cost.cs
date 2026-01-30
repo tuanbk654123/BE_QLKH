@@ -3,6 +3,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace BE_QLKH.Models;
 
+[BsonIgnoreExtraElements]
 public class Cost
 {
     [BsonId]
@@ -77,16 +78,7 @@ public class Cost
 
     [BsonElement("rejection_reason")]
     public string? RejectionReason { get; set; }
-
-    [BsonElement("approver_manager")]
-    public string? ApproverManager { get; set; }
-
-    [BsonElement("approver_director")]
-    public string? ApproverDirector { get; set; }
-
-    [BsonElement("accountant_review")]
-    public string? AccountantReview { get; set; }
-
+ 
     [BsonElement("note")]
     public string? Note { get; set; }
 
