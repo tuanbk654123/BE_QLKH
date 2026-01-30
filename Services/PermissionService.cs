@@ -67,6 +67,8 @@ public class PermissionService : IPermissionService
     public async Task SavePermissionMatrixAsync(
         Dictionary<string, Dictionary<string, Dictionary<string, string>>> permissions)
     {
+        var writeModels = new List<WriteModel<FieldPermission>>();
+
         foreach (var moduleEntry in permissions)
         {
             var moduleCode = moduleEntry.Key;
@@ -89,12 +91,14 @@ public class PermissionService : IPermissionService
                         .SetOnInsert(p => p.FieldCode, fieldCode)
                         .SetOnInsert(p => p.RoleCode, roleCode);
 
-                    await _fieldPermissions.UpdateOneAsync(
-                        filter,
-                        update,
-                        new UpdateOptions { IsUpsert = true });
+                    writeModels.Add(new UpdateOneModel<FieldPermission>(filter, update) { IsUpsert = true });
                 }
             }
+        }
+
+        if (writeModels.Any())
+        {
+            await _fieldPermissions.BulkWriteAsync(writeModels);
         }
     }
 
