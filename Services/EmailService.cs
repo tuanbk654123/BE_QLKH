@@ -100,7 +100,7 @@ public class EmailService : IEmailService
         </div>
         <div class=""content"">
             <h2 style=""color: #333;"">{title}</h2>
-            <p style=""font-size: 16px;"">{message}</p>
+            <div style=""font-size: 16px;"">{message}</div>
             <div style=""text-align: center; margin-top: 30px;"">
                 {buttonHtml}
             </div>

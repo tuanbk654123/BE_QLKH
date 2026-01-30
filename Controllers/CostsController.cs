@@ -632,7 +632,6 @@ public class CostsController : ControllerBase
                     {
                         emailBody = $@"
                         <div style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
-                            <h2 style='color: #2c3e50;'>{title}</h2>
                             <p>{message}</p>
                             <div style='background-color: #f9f9f9; padding: 15px; border-radius: 5px; border: 1px solid #ddd; margin-top: 20px;'>
                                 <h3 style='margin-top: 0; color: #3498db;'>Thông tin phiếu chi</h3>
