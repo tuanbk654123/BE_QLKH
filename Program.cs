@@ -22,6 +22,7 @@ builder.Services.AddSingleton<IMongoClient>(sp =>
 });
 
 builder.Services.AddScoped<IPermissionService, PermissionService>();
+builder.Services.AddTransient<IEmailService, EmailService>();
 builder.Services.AddHostedService<DatabaseSeeder>();
 
 builder.Services.AddControllers();

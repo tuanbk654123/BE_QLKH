@@ -134,7 +134,7 @@ public class DatabaseSeeder : IHostedService
                     UserId = "U006",
                     Username = "manager",
                     FullName = "Quản lý IP",
-                    Email = "manager@example.com",
+                    Email = "tuanvb96@gmail.com",
                     PasswordHash = HashPassword("123456"),
                     RoleCode = "ip_manager",
                     Status = "active",
@@ -383,10 +383,194 @@ public class DatabaseSeeder : IHostedService
                     PotentialLevel = "Cao",
                     SourceClassification = "Đối tác",
                     NsnnSource = ""
+                },
+                new Customer
+                {
+                    Id = ObjectId.GenerateNewId().ToString(),
+                    LegacyId = 6,
+                    Name = "Nguyễn Văn F (2026)",
+                    Email = "nguyenvanf@example.com",
+                    Phone = "0906789012",
+                    Address = "123 Đường 2026, Quận 1, TP.HCM",
+                    Company = "Công ty 2026 A",
+                    TaxCode = "0106789012",
+                    RepresentativeName = "Nguyễn Văn F",
+                    RepresentativePosition = "Giám đốc",
+                    RepresentativePhone = "0906789012",
+                    BusinessNeeds = "Tư vấn 2026",
+                    BusinessScale = "100+ nhân sự",
+                    BusinessIndustry = "Công nghệ",
+                    CopyrightStatus = "Đã đăng ký",
+                    TrademarkStatus = "Đang thẩm định",
+                    PatentStatus = "Không có",
+                    IndustrialDesign = "Không có",
+                    ContractStatus = "Mới ký",
+                    Status = "active",
+                    TotalOrders = 5,
+                    TotalRevenue = 150000000m,
+                    JoinDate = "2026-01-10",
+                    Notes = "Khách hàng mới 2026",
+                    ProductsServices = "Giải pháp Cloud",
+                    IpGroup = "Nhóm 1",
+                    ConsultingStatus = "Đang tư vấn",
+                    FilingStatus = "Đã nộp",
+                    DocumentLink = "",
+                    Authorization = "Đã có",
+                    ApplicationReviewStatus = "Chưa có",
+                    Priority = "Mức 1",
+                    ContractPaid = "30%",
+                    ContractValue = 500000000m,
+                    StartDate = "2026-01-15",
+                    EndDate = "2026-12-15",
+                    ImplementationDays = 330,
+                    PotentialLevel = "Cao",
+                    SourceClassification = "Marketing",
+                    NsnnSource = ""
+                },
+                new Customer
+                {
+                    Id = ObjectId.GenerateNewId().ToString(),
+                    LegacyId = 7,
+                    Name = "Trần Thị G (2026)",
+                    Email = "tranthig@example.com",
+                    Phone = "0907890123",
+                    Address = "456 Đường 2026, Quận 2, TP.HCM",
+                    Company = "Công ty 2026 B",
+                    TaxCode = "0107890123",
+                    RepresentativeName = "Trần Thị G",
+                    RepresentativePosition = "Trưởng phòng",
+                    RepresentativePhone = "0907890123",
+                    BusinessNeeds = "Đăng ký nhãn hiệu",
+                    BusinessScale = "20 nhân sự",
+                    BusinessIndustry = "Bán lẻ",
+                    CopyrightStatus = "Chưa có",
+                    TrademarkStatus = "Chưa đăng ký",
+                    PatentStatus = "Không có",
+                    IndustrialDesign = "Không có",
+                    ContractStatus = "Đang đàm phán",
+                    Status = "active",
+                    TotalOrders = 2,
+                    TotalRevenue = 20000000m,
+                    JoinDate = "2026-02-15",
+                    Notes = "",
+                    ProductsServices = "Tư vấn luật",
+                    IpGroup = "Nhóm 2",
+                    ConsultingStatus = "Chưa tư vấn",
+                    FilingStatus = "Chưa nộp",
+                    DocumentLink = "",
+                    Authorization = "Chưa có",
+                    ApplicationReviewStatus = "Chưa có",
+                    Priority = "Mức 2",
+                    ContractPaid = "0%",
+                    ContractValue = 50000000m,
+                    StartDate = "",
+                    EndDate = "",
+                    ImplementationDays = 0,
+                    PotentialLevel = "Trung bình",
+                    SourceClassification = "Giới thiệu",
+                    NsnnSource = ""
                 }
             };
 
             await customersCollection.InsertManyAsync(customers, cancellationToken: cancellationToken);
+        }
+        else
+        {
+            // Ensure 2026 customers exist if collection is not empty
+            var existing2026Customer = await customersCollection.Find(x => x.Email == "nguyenvanf@example.com").FirstOrDefaultAsync(cancellationToken);
+            if (existing2026Customer == null)
+            {
+                var additionalCustomers = new List<Customer>
+                {
+                    new Customer
+                    {
+                        Id = ObjectId.GenerateNewId().ToString(),
+                        LegacyId = 6,
+                        Name = "Nguyễn Văn F (2026)",
+                        Email = "nguyenvanf@example.com",
+                        Phone = "0906789012",
+                        Address = "123 Đường 2026, Quận 1, TP.HCM",
+                        Company = "Công ty 2026 A",
+                        TaxCode = "0106789012",
+                        RepresentativeName = "Nguyễn Văn F",
+                        RepresentativePosition = "Giám đốc",
+                        RepresentativePhone = "0906789012",
+                        BusinessNeeds = "Tư vấn 2026",
+                        BusinessScale = "100+ nhân sự",
+                        BusinessIndustry = "Công nghệ",
+                        CopyrightStatus = "Đã đăng ký",
+                        TrademarkStatus = "Đang thẩm định",
+                        PatentStatus = "Không có",
+                        IndustrialDesign = "Không có",
+                        ContractStatus = "Mới ký",
+                        Status = "active",
+                        TotalOrders = 5,
+                        TotalRevenue = 150000000m,
+                        JoinDate = "2026-01-10",
+                        Notes = "Khách hàng mới 2026",
+                        ProductsServices = "Giải pháp Cloud",
+                        IpGroup = "Nhóm 1",
+                        ConsultingStatus = "Đang tư vấn",
+                        FilingStatus = "Đã nộp",
+                        DocumentLink = "",
+                        Authorization = "Đã có",
+                        ApplicationReviewStatus = "Chưa có",
+                        Priority = "Mức 1",
+                        ContractPaid = "30%",
+                        ContractValue = 500000000m,
+                        StartDate = "2026-01-15",
+                        EndDate = "2026-12-15",
+                        ImplementationDays = 330,
+                        PotentialLevel = "Cao",
+                        SourceClassification = "Marketing",
+                        NsnnSource = ""
+                    },
+                    new Customer
+                    {
+                        Id = ObjectId.GenerateNewId().ToString(),
+                        LegacyId = 7,
+                        Name = "Trần Thị G (2026)",
+                        Email = "tranthig@example.com",
+                        Phone = "0907890123",
+                        Address = "456 Đường 2026, Quận 2, TP.HCM",
+                        Company = "Công ty 2026 B",
+                        TaxCode = "0107890123",
+                        RepresentativeName = "Trần Thị G",
+                        RepresentativePosition = "Trưởng phòng",
+                        RepresentativePhone = "0907890123",
+                        BusinessNeeds = "Đăng ký nhãn hiệu",
+                        BusinessScale = "20 nhân sự",
+                        BusinessIndustry = "Bán lẻ",
+                        CopyrightStatus = "Chưa có",
+                        TrademarkStatus = "Chưa đăng ký",
+                        PatentStatus = "Không có",
+                        IndustrialDesign = "Không có",
+                        ContractStatus = "Đang đàm phán",
+                        Status = "active",
+                        TotalOrders = 2,
+                        TotalRevenue = 20000000m,
+                        JoinDate = "2026-02-15",
+                        Notes = "",
+                        ProductsServices = "Tư vấn luật",
+                        IpGroup = "Nhóm 2",
+                        ConsultingStatus = "Chưa tư vấn",
+                        FilingStatus = "Chưa nộp",
+                        DocumentLink = "",
+                        Authorization = "Chưa có",
+                        ApplicationReviewStatus = "Chưa có",
+                        Priority = "Mức 2",
+                        ContractPaid = "0%",
+                        ContractValue = 50000000m,
+                        StartDate = "",
+                        EndDate = "",
+                        ImplementationDays = 0,
+                        PotentialLevel = "Trung bình",
+                        SourceClassification = "Giới thiệu",
+                        NsnnSource = ""
+                    }
+                };
+                await customersCollection.InsertManyAsync(additionalCustomers, cancellationToken: cancellationToken);
+            }
         }
 
         var costsCollection = db.GetCollection<Cost>("costs");
@@ -394,6 +578,85 @@ public class DatabaseSeeder : IHostedService
         {
             var costs = new List<Cost>
             {
+                // Dữ liệu 2026
+                new Cost
+                {
+                    Id = ObjectId.GenerateNewId().ToString(),
+                    LegacyId = 101,
+                    Requester = "Nguyễn Văn A",
+                    Department = "Kinh doanh",
+                    RequestDate = "2026-01-05",
+                    ProjectCode = "PJ2026-001",
+                    TransactionType = "Chi",
+                    TransactionObject = "Nhà hàng 2026",
+                    Content = "Chi phí tiếp khách",
+                    Description = "Tiếp khách dự án PJ2026-001",
+                    AmountBeforeTax = 6000000m,
+                    TaxRate = "10%",
+                    TotalAmount = 6600000m,
+                    PaymentMethod = "Chuyển khoản",
+                    Bank = "Techcombank",
+                    AccountNumber = "190333333333",
+                    VoucherType = "Hóa đơn",
+                    VoucherNumber = "HD2026001",
+                    VoucherDate = "2026-01-05",
+                    Attachment = "",
+                    PaymentStatus = "Đã thanh toán",
+                    RejectionReason = "",
+                    Note = ""
+                },
+                new Cost
+                {
+                    Id = ObjectId.GenerateNewId().ToString(),
+                    LegacyId = 102,
+                    Requester = "Trần Thị B",
+                    Department = "Hành chính",
+                    RequestDate = "2026-02-10",
+                    ProjectCode = "PJ2026-002",
+                    TransactionType = "Chi",
+                    TransactionObject = "VPP 2026",
+                    Content = "Mua sắm thiết bị",
+                    Description = "Mua máy in mới",
+                    AmountBeforeTax = 8000000m,
+                    TaxRate = "8%",
+                    TotalAmount = 8640000m,
+                    PaymentMethod = "Chuyển khoản",
+                    Bank = "ACB",
+                    AccountNumber = "12345678",
+                    VoucherType = "Hóa đơn",
+                    VoucherNumber = "HD2026002",
+                    VoucherDate = "2026-02-10",
+                    Attachment = "",
+                    PaymentStatus = "Đã thanh toán",
+                    RejectionReason = "",
+                    Note = ""
+                },
+                new Cost
+                {
+                    Id = ObjectId.GenerateNewId().ToString(),
+                    LegacyId = 103,
+                    Requester = "Lê Văn C",
+                    Department = "Kỹ thuật",
+                    RequestDate = "2026-03-15",
+                    ProjectCode = "PJ2026-003",
+                    TransactionType = "Tạm ứng",
+                    TransactionObject = "Lê Văn C",
+                    Content = "Công tác phí",
+                    Description = "Đi công tác Đà Nẵng",
+                    AmountBeforeTax = 5000000m,
+                    TaxRate = "0%",
+                    TotalAmount = 5000000m,
+                    PaymentMethod = "Tiền mặt",
+                    Bank = "",
+                    AccountNumber = "",
+                    VoucherType = "Giấy đề nghị",
+                    VoucherNumber = "TU2026001",
+                    VoucherDate = "2026-03-15",
+                    Attachment = "",
+                    PaymentStatus = "Đợi duyệt",
+                    RejectionReason = "",
+                    Note = ""
+                },
                 // Dữ liệu 2023
                 new Cost
                 {
@@ -1145,6 +1408,174 @@ public class DatabaseSeeder : IHostedService
                 new UpdateOptions { IsUpsert = true },
                 cancellationToken
             );
+        }
+
+        Console.WriteLine("--- CHECKING 2026 DATA ---");
+
+        // 7. Supplement Data for 2026 (Customers and Costs) to make charts look full
+        // Check if we have enough customers in 2026
+        var count2026Customers = await customersCollection.CountDocumentsAsync(
+            c => c.JoinDate != null && c.JoinDate.Contains("2026"),
+            cancellationToken: cancellationToken);
+        
+        Console.WriteLine($"Found {count2026Customers} customers in 2026");
+
+        if (count2026Customers < 20)
+        {
+            Console.WriteLine("Seeding more customers for 2026...");
+            var extraCustomers = new List<Customer>();
+            var random = new Random();
+            for (int month = 1; month <= 12; month++)
+            {
+                // Add 2-3 customers per month
+                int count = random.Next(2, 4); 
+                for (int i = 0; i < count; i++)
+                {
+                    string joinDate = $"2026-{month:00}-{random.Next(1, 28):00}";
+                    string status = random.Next(0, 2) == 0 ? "Đã tư vấn" : "Mới tiếp nhận"; // Mix for Green/Blue bars
+                    if (random.Next(0, 3) == 0) status = "Đang tư vấn"; // More mix
+
+                    extraCustomers.Add(new Customer
+                    {
+                        Id = ObjectId.GenerateNewId().ToString(),
+                        LegacyId = 1000 + (month * 100) + i,
+                        Name = $"KH 2026 Tháng {month} #{i+1}",
+                        Email = $"kh2026_{month}_{i}@example.com",
+                        Phone = $"09{month:00}{i:00}0000",
+                        Address = $"Địa chỉ Tháng {month}",
+                        Company = $"Công ty T{month}-{i}",
+                        TaxCode = $"MST2026{month}{i}",
+                        RepresentativeName = $"Đại diện {month}-{i}",
+                        RepresentativePosition = "Giám đốc",
+                        RepresentativePhone = "",
+                        BusinessNeeds = "Nhu cầu 2026",
+                        BusinessScale = "Vừa",
+                        BusinessIndustry = "Dịch vụ",
+                        CopyrightStatus = "",
+                        TrademarkStatus = "",
+                        PatentStatus = "",
+                        IndustrialDesign = "",
+                        ContractStatus = "Mới",
+                        Status = "active",
+                        TotalOrders = 1,
+                        TotalRevenue = 10000000m,
+                        JoinDate = joinDate,
+                        Notes = "Auto-generated for chart",
+                        ProductsServices = "Dịch vụ",
+                        IpGroup = "Nhóm 1",
+                        ConsultingStatus = status,
+                        FilingStatus = "",
+                        DocumentLink = "",
+                        Authorization = "Chưa có",
+                        ApplicationReviewStatus = "",
+                        Priority = "Mức 1",
+                        ContractPaid = "0%",
+                        ContractValue = 20000000m,
+                        StartDate = joinDate,
+                        EndDate = "",
+                        ImplementationDays = 0,
+                        PotentialLevel = "Cao",
+                        SourceClassification = "Marketing",
+                        NsnnSource = ""
+                    });
+                }
+            }
+            if (extraCustomers.Any())
+            {
+                await customersCollection.InsertManyAsync(extraCustomers, cancellationToken: cancellationToken);
+                Console.WriteLine($"Inserted {extraCustomers.Count} customers for 2026");
+            }
+        }
+
+        // Check if we have enough costs in 2026
+        var count2026Costs = await costsCollection.CountDocumentsAsync(
+             c => c.VoucherDate != null && c.VoucherDate.Contains("2026"),
+             cancellationToken: cancellationToken);
+        
+        Console.WriteLine($"Found {count2026Costs} costs in 2026");
+
+        if (count2026Costs < 15)
+        {
+            Console.WriteLine("Seeding more costs for 2026...");
+            var extraCosts = new List<Cost>();
+            var random = new Random();
+            
+            // Add specifically for Jan 2026 to fill the Pie Chart
+            string[] projectsJan = { "PJ2026-001", "PJ2026-002", "PJ2026-003", "PJ2026-004", "PJ2026-005" };
+            foreach (var proj in projectsJan)
+            {
+                extraCosts.Add(new Cost
+                {
+                    Id = ObjectId.GenerateNewId().ToString(),
+                    LegacyId = 2000 + random.Next(1, 10000),
+                    Requester = "Auto Generator",
+                    Department = "Kinh doanh",
+                    RequestDate = $"2026-01-{random.Next(5, 25):00}",
+                    ProjectCode = proj,
+                    TransactionType = "Chi",
+                    TransactionObject = "NCC " + proj,
+                    Content = "Chi phí " + proj,
+                    Description = "Auto generated cost",
+                    AmountBeforeTax = random.Next(1, 10) * 1000000m,
+                    TaxRate = "10%",
+                    TotalAmount = random.Next(1, 10) * 1100000m,
+                    PaymentMethod = "Chuyển khoản",
+                    Bank = "MB",
+                    AccountNumber = "0000",
+                    VoucherType = "Hóa đơn",
+                    VoucherNumber = "HD" + proj + random.Next(1,100),
+                    VoucherDate = $"2026-01-{random.Next(5, 25):00}",
+                    Attachment = "",
+                    PaymentStatus = "Đã thanh toán", // Must be paid to show up
+                    RejectionReason = "",
+                    Note = ""
+                });
+            }
+
+            // Add for other months
+            for (int month = 2; month <= 12; month++)
+            {
+                 extraCosts.Add(new Cost
+                {
+                    Id = ObjectId.GenerateNewId().ToString(),
+                    LegacyId = 2000 + (month * 100) + random.Next(1, 99),
+                    Requester = "Auto Generator",
+                    Department = "Kinh doanh",
+                    RequestDate = $"2026-{month:00}-15",
+                    ProjectCode = $"PJ2026-{month:00}",
+                    TransactionType = "Chi",
+                    TransactionObject = "NCC T" + month,
+                    Content = "Chi phí T" + month,
+                    Description = "Auto generated cost",
+                    AmountBeforeTax = 5000000m,
+                    TaxRate = "10%",
+                    TotalAmount = 5500000m,
+                    PaymentMethod = "Chuyển khoản",
+                    Bank = "MB",
+                    AccountNumber = "0000",
+                    VoucherType = "Hóa đơn",
+                    VoucherNumber = $"HD-T{month}-{random.Next(1,100)}",
+                    VoucherDate = $"2026-{month:00}-15",
+                    Attachment = "",
+                    PaymentStatus = "Đã thanh toán",
+                    RejectionReason = "",
+                    Note = ""
+                });
+            }
+
+            if (extraCosts.Any())
+            {
+                await costsCollection.InsertManyAsync(extraCosts, cancellationToken: cancellationToken);
+                Console.WriteLine($"Inserted {extraCosts.Count} costs for 2026");
+            }
+        }
+
+        // Ensure manager email is updated (Fix for existing data)
+        var managerUser = await usersCollection.Find(u => u.Username == "manager").FirstOrDefaultAsync(cancellationToken);
+        if (managerUser != null && managerUser.Email != "tuanvb96@gmail.com")
+        {
+            var update = Builders<User>.Update.Set(u => u.Email, "tuanvb96@gmail.com");
+            await usersCollection.UpdateOneAsync(u => u.Id == managerUser.Id, update, cancellationToken: cancellationToken);
         }
     }
 

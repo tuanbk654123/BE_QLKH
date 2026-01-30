@@ -1,5 +1,6 @@
 using BE_QLKH.Hubs;
 using BE_QLKH.Models;
+using BE_QLKH.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -21,12 +22,14 @@ public class CostsController : ControllerBase
     private readonly IMongoCollection<Notification> _notifications;
     private readonly IHubContext<NotificationsHub> _hubContext;
     private readonly ILogger<CostsController> _logger;
+    private readonly IEmailService _emailService;
 
     public CostsController(
         IMongoClient client, 
         IOptions<MongoDbSettings> options,
         IHubContext<NotificationsHub> hubContext,
-        ILogger<CostsController> logger)
+        ILogger<CostsController> logger,
+        IEmailService emailService)
     {
         var db = client.GetDatabase(options.Value.DatabaseName);
         _costs = db.GetCollection<Cost>("costs");
@@ -34,6 +37,7 @@ public class CostsController : ControllerBase
         _notifications = db.GetCollection<Notification>("notifications");
         _hubContext = hubContext;
         _logger = logger;
+        _emailService = emailService;
     }
 
     [HttpGet]
@@ -576,6 +580,20 @@ public class CostsController : ControllerBase
         catch 
         {
             // Ignore SignalR errors
+        }
+
+        // Send Email
+        try
+        {
+            var user = await _users.Find(u => u.LegacyId == userId).FirstOrDefaultAsync();
+            if (user != null && !string.IsNullOrEmpty(user.Email))
+            {
+                await _emailService.SendEmailAsync(user.Email, title, title, message);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Failed to send email notification to user {userId}");
         }
     }
 }

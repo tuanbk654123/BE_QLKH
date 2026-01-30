@@ -1,5 +1,6 @@
 using BE_QLKH.Hubs;
 using BE_QLKH.Models;
+using BE_QLKH.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -14,13 +15,21 @@ namespace BE_QLKH.Controllers;
 public class NotificationsController : ControllerBase
 {
     private readonly IMongoCollection<Notification> _notifications;
+    private readonly IMongoCollection<User> _users;
     private readonly IHubContext<NotificationsHub> _hubContext;
+    private readonly IEmailService _emailService;
 
-    public NotificationsController(IMongoClient client, IOptions<MongoDbSettings> options, IHubContext<NotificationsHub> hubContext)
+    public NotificationsController(
+        IMongoClient client, 
+        IOptions<MongoDbSettings> options, 
+        IHubContext<NotificationsHub> hubContext,
+        IEmailService emailService)
     {
         var db = client.GetDatabase(options.Value.DatabaseName);
         _notifications = db.GetCollection<Notification>("notifications");
+        _users = db.GetCollection<User>("users");
         _hubContext = hubContext;
+        _emailService = emailService;
     }
 
     [HttpGet]
