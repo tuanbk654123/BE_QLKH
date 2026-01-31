@@ -9,6 +9,7 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 using System.Linq;
+using System.Security.Claims;
 using System.Text.Json;
 
 namespace BE_QLKH.Controllers;
@@ -54,6 +55,23 @@ public class CostsController : ControllerBase
 
         var builder = Builders<Cost>.Filter;
         var filter = builder.Empty;
+
+        // Role-Based Access Control (RBAC) for Visibility
+        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+        var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; // This is the ObjectId string usually, but let's check legacy_id claim
+        var legacyIdStr = User.FindFirst("legacy_id")?.Value;
+
+        if (int.TryParse(legacyIdStr, out int currentUserId))
+        {
+            // Define roles that can view ALL costs
+            var viewAllRoles = new[] { "admin", "director", "giam_doc", "manager", "ip_manager", "quan_ly", "accountant", "ke_toan" };
+            
+            if (!viewAllRoles.Contains(userRole))
+            {
+                // Regular employees only see their own costs
+                filter &= builder.Eq(c => c.CreatedByUserId, currentUserId);
+            }
+        }
 
         // Global Search
         if (!string.IsNullOrWhiteSpace(search))
@@ -290,11 +308,37 @@ public class CostsController : ControllerBase
     public async Task<ActionResult<object>> UpdateCost(int id, [FromBody] Cost input)
     {
         var userIdStr = User.FindFirst("legacy_id")?.Value;
-        int.TryParse(userIdStr, out var userId);
+        if (!int.TryParse(userIdStr, out var userId)) return Unauthorized();
+        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
         var userName = User.Identity?.Name ?? "Unknown";
 
         var cost = await _costs.Find(c => c.LegacyId == id).FirstOrDefaultAsync();
         if (cost == null) return NotFound(new { message = "Cost not found" });
+
+        // RBAC: Check if user can edit
+        bool canEdit = false;
+        
+        // Admin can always edit
+        if (userRole == "admin") canEdit = true;
+        
+        // Creator can edit if Draft or Cancelled
+        else if (cost.CreatedByUserId == userId && (cost.PaymentStatus == "Đợi duyệt" || cost.PaymentStatus == "Huỷ")) canEdit = true;
+        
+        // Manager can edit if Draft (to help?) or Manager Approval stage
+        else if ((userRole == "manager" || userRole == "ip_manager" || userRole == "quan_ly") && 
+                 (cost.PaymentStatus == "Đợi duyệt" || cost.PaymentStatus == "Quản lý duyệt")) canEdit = true;
+                 
+        // Director can edit if Manager Approval (Skip-level) or Director Approval stage
+        else if ((userRole == "director" || userRole == "giam_doc") && 
+                 (cost.PaymentStatus == "Đợi duyệt" || cost.PaymentStatus == "Quản lý duyệt" || cost.PaymentStatus == "Giám đốc duyệt")) canEdit = true;
+                 
+        // Accountant can edit if Director Approval (Pre-payment)
+        else if ((userRole == "accountant" || userRole == "ke_toan") && cost.PaymentStatus == "Giám đốc duyệt") canEdit = true;
+
+        if (!canEdit)
+        {
+            return StatusCode(403, new { message = "Bạn không có quyền chỉnh sửa phiếu này ở trạng thái hiện tại" });
+        }
         
         // FIX: If input.PaymentStatus is null/empty (e.g. removed by frontend), preserve existing status
         if (string.IsNullOrEmpty(input.PaymentStatus))
@@ -345,8 +389,26 @@ public class CostsController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<ActionResult<object>> DeleteCost(int id)
     {
+        var userIdStr = User.FindFirst("legacy_id")?.Value;
+        if (!int.TryParse(userIdStr, out var userId)) return Unauthorized();
+        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+        var cost = await _costs.Find(c => c.LegacyId == id).FirstOrDefaultAsync();
+        if (cost == null) return NotFound(new { message = "Cost not found" });
+
+        // RBAC: Check if user can delete
+        bool canDelete = false;
+
+        if (userRole == "admin") canDelete = true;
+        // Creator can delete only if Draft or Cancelled
+        else if (cost.CreatedByUserId == userId && (cost.PaymentStatus == "Đợi duyệt" || cost.PaymentStatus == "Huỷ" || cost.PaymentStatus == "Từ chối")) canDelete = true;
+        
+        if (!canDelete)
+        {
+             return StatusCode(403, new { message = "Bạn không có quyền xóa phiếu này (chỉ xóa được phiếu nháp hoặc phiếu đã bị hủy)" });
+        }
+
         var result = await _costs.DeleteOneAsync(c => c.LegacyId == id);
-        if (result.DeletedCount == 0) return NotFound(new { message = "Cost not found" });
         return Ok(new { message = "Cost deleted" });
     }
 
