@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
+using System.Linq;
 using System.Text.Json;
 
 namespace BE_QLKH.Controllers;
@@ -295,6 +296,19 @@ public class CostsController : ControllerBase
         var cost = await _costs.Find(c => c.LegacyId == id).FirstOrDefaultAsync();
         if (cost == null) return NotFound(new { message = "Cost not found" });
         
+        // FIX: If input.PaymentStatus is null/empty (e.g. removed by frontend), preserve existing status
+        if (string.IsNullOrEmpty(input.PaymentStatus))
+        {
+            input.PaymentStatus = cost.PaymentStatus;
+            
+            // Self-healing: If status is still null/empty (corrupted data), recover from history
+            if (string.IsNullOrEmpty(input.PaymentStatus))
+            {
+                var lastValid = cost.StatusHistory.LastOrDefault(h => !string.IsNullOrEmpty(h.Status));
+                input.PaymentStatus = lastValid?.Status ?? "Đợi duyệt";
+            }
+        }
+
         // Detect status change and log history
         if (input.PaymentStatus != cost.PaymentStatus)
         {
@@ -307,35 +321,19 @@ public class CostsController : ControllerBase
                         ? $"Từ chối: {input.RejectionReason}" 
                         : $"Cập nhật trạng thái: {input.PaymentStatus}"
              });
-
-             // Auto-fill Approver fields based on status change - REMOVED per user request
-             /*
-             if (input.PaymentStatus == "Quản lý duyệt" && string.IsNullOrEmpty(input.ApproverManager))
-             {
-                 input.ApproverManager = "Đã duyệt";
-             }
-             else if (input.PaymentStatus == "Giám đốc duyệt" && string.IsNullOrEmpty(input.ApproverDirector))
-             {
-                 input.ApproverDirector = "Đã duyệt";
-             }
-             else if (input.PaymentStatus == "Đã thanh toán" && string.IsNullOrEmpty(input.AccountantReview))
-             {
-                 input.AccountantReview = "Đã duyệt";
-             }
-             else if (input.PaymentStatus == "Huỷ")
-             {
-                 var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
-                 if (userRole == "ip_manager" || userRole == "quan_ly") input.ApproverManager = "Từ chối";
-                 else if (userRole == "giam_doc") input.ApproverDirector = "Từ chối";
-                 else if (userRole == "ke_toan") input.AccountantReview = "Từ chối";
-             }
-             */
         }
 
         input.Id = cost.Id;
         input.LegacyId = cost.LegacyId;
         input.CreatedByUserId = cost.CreatedByUserId;
         input.StatusHistory = cost.StatusHistory;
+        
+        // Preserve fields that are not in the form (prevent data loss)
+        if (string.IsNullOrEmpty(input.Requester)) input.Requester = cost.Requester;
+        if (string.IsNullOrEmpty(input.Department)) input.Department = cost.Department;
+        if (string.IsNullOrEmpty(input.ProjectCode)) input.ProjectCode = cost.ProjectCode;
+        if (string.IsNullOrEmpty(input.TransactionType)) input.TransactionType = cost.TransactionType;
+        if (string.IsNullOrEmpty(input.TransactionObject)) input.TransactionObject = cost.TransactionObject;
         
         // Allow PaymentStatus, RejectionReason, Approver* fields to be updated from input
 
