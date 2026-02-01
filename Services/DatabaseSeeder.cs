@@ -1003,13 +1003,25 @@ public class DatabaseSeeder : IHostedService
                 new ModuleDef { Code = "qlcp", Name = "Quản lý chi phí", IsActive = true },
                 new ModuleDef { Code = "dashboard", Name = "Dashboard", IsActive = true },
                 new ModuleDef { Code = "users", Name = "Quản lý nhân viên", IsActive = true },
-                new ModuleDef { Code = "export", Name = "Xuất văn bản", IsActive = true }
+                new ModuleDef { Code = "export", Name = "Xuất văn bản", IsActive = true },
+                new ModuleDef { Code = "scheduling", Name = "Chấm công dự án", IsActive = true }
             };
 
             await modulesCollection.InsertManyAsync(defaultModules, cancellationToken: cancellationToken);
         }
+        else 
+        {
+             // Ensure scheduling module exists if DB already populated
+             var schedMod = await modulesCollection.Find(m => m.Code == "scheduling").FirstOrDefaultAsync(cancellationToken);
+             if (schedMod == null)
+             {
+                 await modulesCollection.InsertOneAsync(new ModuleDef { Code = "scheduling", Name = "Chấm công dự án", IsActive = true }, cancellationToken: cancellationToken);
+             }
+        }
 
         var fieldsCollection = db.GetCollection<FieldDef>("fields");
+        var fieldPermissionsCollection = db.GetCollection<FieldPermission>("field_permissions");
+
         if (await fieldsCollection.CountDocumentsAsync(_ => true, cancellationToken: cancellationToken) == 0)
         {
             var fieldDefs = new List<FieldDef>
@@ -1114,7 +1126,6 @@ public class DatabaseSeeder : IHostedService
             await fieldsCollection.InsertManyAsync(fieldDefs, cancellationToken: cancellationToken);
         }
 
-        var fieldPermissionsCollection = db.GetCollection<FieldPermission>("field_permissions");
         if (await fieldPermissionsCollection.CountDocumentsAsync(_ => true, cancellationToken: cancellationToken) == 0)
         {
             var fieldPermissions = new List<FieldPermission>();
@@ -1568,6 +1579,62 @@ public class DatabaseSeeder : IHostedService
                 await costsCollection.InsertManyAsync(extraCosts, cancellationToken: cancellationToken);
                 Console.WriteLine($"Inserted {extraCosts.Count} costs for 2026");
             }
+        }
+
+        // ---------------------------------------------------------
+        // Ensure Scheduling Module Fields and Permissions Exist
+        // ---------------------------------------------------------
+        
+        // 1. Ensure Scheduling Fields
+        var schedulingFields = new List<FieldDef>
+        {
+            new FieldDef { ModuleCode = "scheduling", Code = "seedData", Label = "Nạp dữ liệu mẫu", GroupCode = "actions", GroupLabel = "Chức năng", OrderIndex = 1 },
+            new FieldDef { ModuleCode = "scheduling", Code = "generate", Label = "Xếp lịch", GroupCode = "actions", GroupLabel = "Chức năng", OrderIndex = 2 },
+            new FieldDef { ModuleCode = "scheduling", Code = "export", Label = "Xuất Excel", GroupCode = "actions", GroupLabel = "Chức năng", OrderIndex = 3 },
+            new FieldDef { ModuleCode = "scheduling", Code = "config", Label = "Cấu hình tham số", GroupCode = "config", GroupLabel = "Cấu hình", OrderIndex = 4 },
+            new FieldDef { ModuleCode = "scheduling", Code = "view", Label = "Xem kết quả", GroupCode = "view", GroupLabel = "Xem", OrderIndex = 5 }
+        };
+
+        foreach (var field in schedulingFields)
+        {
+            var existingField = await fieldsCollection.Find(f => f.ModuleCode == "scheduling" && f.Code == field.Code).FirstOrDefaultAsync(cancellationToken);
+            if (existingField == null)
+            {
+                field.Id = ObjectId.GenerateNewId().ToString();
+                await fieldsCollection.InsertOneAsync(field, cancellationToken: cancellationToken);
+            }
+        }
+
+        // 2. Ensure Scheduling Permissions
+        var schedulingFieldCodes = new[] { "seedData", "generate", "export", "config", "view" };
+        var allRoles = new[] { "marketing_sales", "ip_executive", "ip_manager", "accountant", "director", "ceo", "admin" };
+        
+        foreach (var fieldCode in schedulingFieldCodes)
+        {
+             foreach (var roleCode in allRoles)
+             {
+                 // Define permission level based on rules
+                 string level = "N"; // Default
+                 
+                 if (roleCode == "admin" || roleCode == "ceo") level = "W";
+                 else if (roleCode == "director" || roleCode == "ip_manager") level = "W";
+                 else if (roleCode == "ip_executive")
+                 {
+                     if (fieldCode == "export" || fieldCode == "view") level = "W";
+                     else level = "R";
+                 }
+                 else if (roleCode == "marketing_sales" || roleCode == "accountant") level = "N";
+
+                 var permUpdate = Builders<FieldPermission>.Update.Set(p => p.PermissionLevel, level);
+                 
+                 // Upsert permission
+                 await fpCollection.UpdateOneAsync(
+                     p => p.ModuleCode == "scheduling" && p.FieldCode == fieldCode && p.RoleCode == roleCode,
+                     permUpdate,
+                     new UpdateOptions { IsUpsert = true },
+                     cancellationToken
+                 );
+             }
         }
 
         // Ensure manager email is updated (Fix for existing data)

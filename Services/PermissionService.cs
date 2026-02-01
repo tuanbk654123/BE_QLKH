@@ -35,18 +35,21 @@ public class PermissionService : IPermissionService
         var userFields = fields.Where(f => f.ModuleCode == "users").ToList();
         var dashboardFields = fields.Where(f => f.ModuleCode == "dashboard").ToList();
         var exportFields = fields.Where(f => f.ModuleCode == "export").ToList();
+        var schedulingFields = fields.Where(f => f.ModuleCode == "scheduling").ToList();
 
         var qlkhGroups = BuildFieldGroups(qlkhFields);
         var qlcpGroups = BuildFieldGroups(qlcpFields);
         var userGroups = BuildFieldGroups(userFields);
         var dashboardGroups = BuildFieldGroups(dashboardFields);
         var exportGroups = BuildFieldGroups(exportFields);
+        var schedulingGroups = BuildFieldGroups(schedulingFields);
 
         var qlkhPerm = BuildPermissionMap("qlkh", qlkhFields, roles, fieldPermissions);
         var qlcpPerm = BuildPermissionMap("qlcp", qlcpFields, roles, fieldPermissions);
         var userPerm = BuildPermissionMap("users", userFields, roles, fieldPermissions);
         var dashboardPerm = BuildPermissionMap("dashboard", dashboardFields, roles, fieldPermissions);
         var exportPerm = BuildPermissionMap("export", exportFields, roles, fieldPermissions);
+        var schedulingPerm = BuildPermissionMap("scheduling", schedulingFields, roles, fieldPermissions);
 
         return new PermissionMatrixDto
         {
@@ -56,11 +59,13 @@ public class PermissionService : IPermissionService
             UserFields = userGroups,
             DashboardFields = dashboardGroups,
             ExportFields = exportGroups,
+            SchedulingFields = schedulingGroups,
             QlkhPermissions = qlkhPerm,
             QlcpPermissions = qlcpPerm,
             UserPermissions = userPerm,
             DashboardPermissions = dashboardPerm,
-            ExportPermissions = exportPerm
+            ExportPermissions = exportPerm,
+            SchedulingPermissions = schedulingPerm
         };
     }
 
